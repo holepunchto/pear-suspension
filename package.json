@@ -1,0 +1,45 @@
+{
+  "name": "pear-suspension",
+  "version": "0.0.1",
+  "description": "Handle suspend/resume for Pear apps with p2p modules lifecycle hooks",
+  "main": "index.js",
+  "exports": {
+    "./package": "./package.json",
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "files": [
+    "package.json",
+    "index.js",
+    "index.d.ts"
+  ],
+  "devDependencies": {
+    "bare-channel": "^2.0.0",
+    "bare-pipe": "^4.1.3",
+    "bare-subprocess": "^5.0.0",
+    "brittle": "^3.19.0",
+    "lunte": "^1.2.0",
+    "prettier": "^3.6.2",
+    "prettier-config-holepunch": "^2.0.0"
+  },
+  "scripts": {
+    "format": "prettier . --write",
+    "test": "prettier . --check && lunte && brittle-bare test/index.js",
+    "lint": "lunte"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/holepunchto/pear-suspension.git"
+  },
+  "author": "Holepunch Inc",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/holepunchto/pear-suspension/issues"
+  },
+  "homepage": "https://github.com/holepunchto/pear-suspension",
+  "dependencies": {
+    "suspendify": "^1.7.1"
+  }
+}
