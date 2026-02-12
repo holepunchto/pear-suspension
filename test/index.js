@@ -16,6 +16,27 @@ test('PearSuspension instantiates and isBackgrounded is false initially', (t) =>
   t.is(sus.isBackgrounded(), false)
 })
 
+test('verbose true produces logs, verbose false does not', async (t) => {
+  t.plan(2)
+  const logs = []
+  const originalLog = console.log
+  console.log = (...args) => logs.push(args.join(' '))
+
+  const susQuiet = new PearSuspension(minimalOpts())
+  await susQuiet.suspend(0)
+  const quietLogCount = logs.length
+
+  logs.length = 0
+  const susVerbose = new PearSuspension(minimalOpts({ verbose: true }))
+  await susVerbose.suspend(0)
+  const verboseLogCount = logs.length
+
+  console.log = originalLog
+
+  t.is(quietLogCount, 0, 'no logs when verbose is false')
+  t.ok(verboseLogCount > 0, 'logs produced when verbose is true')
+})
+
 test('PearSuspension works with optional pollLinger', (t) => {
   t.plan(1)
   const sus = new PearSuspension(minimalOpts({ pollLinger: async () => 60 }))
