@@ -3,7 +3,7 @@ const path = require('bare-path')
 const Channel = require('bare-channel')
 
 test('thread: suspend, resume and wakeup are called via thread.suspend() / thread.resume() / thread.wakeup()', async (t) => {
-  t.plan(5)
+  t.plan(6)
   const workerPath = path.join(__dirname, 'fixtures', 'thread-worker.js')
 
   const channel = new Channel()
@@ -29,6 +29,10 @@ test('thread: suspend, resume and wakeup are called via thread.suspend() / threa
   await getState() // idle message
   t.ok(afterSuspend.suspendCalled === true, 'suspend was called')
   t.ok(afterSuspend.suspendCalledTime - beforeSuspend >= 1000, 'suspend took at least 1000ms')
+  t.ok(
+    !(afterSuspend.suspendCalledTime - beforeSuspend >= 1100),
+    'suspend doesnt take longer than 1100ms'
+  )
 
   thread.resume()
   const afterResume = await getState()
