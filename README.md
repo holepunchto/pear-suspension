@@ -60,10 +60,6 @@ Resume ASAP.
 
 Wake up then re-suspend.
 
-#### `sus.isBackgrounded()`
-
-Returns `true` when suspended or suspending.
-
 ## License
 
 Apache-2.0
