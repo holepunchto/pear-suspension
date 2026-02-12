@@ -1,9 +1,5 @@
 const Suspendify = require('suspendify')
 
-/**
- * Minimal v0: extends Suspendify, suspends corestore (opts.store), hyperswarm (opts.swarm),
- * , hooks Bare.on('suspend'/'resume'/'wakeup'), and calls Bare.idle() after suspend when not interrupted.
- */
 class PearSuspension extends Suspendify {
   constructor(opts = {}) {
     const Bare = globalThis.Bare
