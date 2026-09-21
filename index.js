@@ -15,12 +15,13 @@ class PearSuspension extends Suspendify {
     const log = opts.verbose ? console.log.bind(console) : () => {}
     this.log = log
     this.verbose = !!opts.verbose
+    this._suspensions = []
     this._customSuspend = typeof opts.suspend === 'function' ? opts.suspend : null
     this._customResume = typeof opts.resume === 'function' ? opts.resume : null
     this._customWakeup = typeof opts.wakeup === 'function' ? opts.wakeup : null
 
     Bare.on('idle', function () {
-      console.log('Bare has fully idled, zzz....')
+      log('Bare has fully idled, zzz....')
     })
     Bare.on('suspend', async (linger) => {
       linger = Math.max(linger - 10_000, 0)
@@ -37,10 +38,17 @@ class PearSuspension extends Suspendify {
     })
   }
 
+  add(name, suspension) {
+    this._suspensions.push({ name, suspension })
+    return this
+  }
+
   async _suspend() {
     this.log('Suspending...')
-    if (this.swarm) await this.swarm.suspend()
-    if (this.store) await this.store.suspend()
+    for (const { name, suspension } of this._suspensions) {
+      this.log(`Suspending ${name}`)
+      await suspension.suspend()
+    }
     if (this._customSuspend !== null) await this._customSuspend()
     if (this.interrupted) {
       this.log('interrupted skipping idle')
@@ -52,8 +60,11 @@ class PearSuspension extends Suspendify {
 
   async _resume() {
     this.log('Resuming...')
-    if (this.store) await this.store.resume()
-    if (this.swarm) await this.swarm.resume()
+    for (let i = this._suspensions.length - 1; i >= 0; i--) {
+      const { name, suspension } = this._suspensions[i]
+      this.log(`Resuming ${name}`)
+      await suspension.resume()
+    }
     if (this._customResume !== null) await this._customResume()
     this.log('Resuming concluded')
   }

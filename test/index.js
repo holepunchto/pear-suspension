@@ -1,6 +1,6 @@
 const { test } = require('brittle')
-const path = require('bare-path')
 const Channel = require('bare-channel')
+const Thread = require('bare-thread')
 
 async function getState(port) {
   const message = await port.read()
@@ -9,13 +9,16 @@ async function getState(port) {
   return message.state
 }
 
-test('suspend, resume and wakeup call custom function', async (t) => {
+function spawnWorker(file, handle) {
+  return new Thread(require.resolve(file), { data: handle })
+}
+
+test('suspend, resume and wakeup call constructor hooks', async (t) => {
   t.plan(4)
-  const workerPath = path.join(__dirname, 'fixtures', 'thread-worker-call-check.js')
 
   const channel = new Channel()
   const port = channel.connect()
-  const thread = new globalThis.Bare.Thread(workerPath, { data: channel.handle })
+  const thread = spawnWorker('./fixtures/thread-worker-call-check.js', channel.handle)
   t.teardown(async () => {
     port.close()
     thread.terminate()
@@ -41,13 +44,46 @@ test('suspend, resume and wakeup call custom function', async (t) => {
   t.ok(idleMessage.isIdle === true, 'went back to idle after wakeup')
 })
 
-test('suspend budgets 10s of linger', async (t) => {
-  t.plan(1)
-  const workerPath = path.join(__dirname, 'fixtures', 'thread-worker-timer.js')
+test('added suspensions use stack order', async (t) => {
+  t.plan(2)
 
   const channel = new Channel()
   const port = channel.connect()
-  const thread = new globalThis.Bare.Thread(workerPath, { data: channel.handle })
+  const thread = spawnWorker('./fixtures/thread-worker-order.js', channel.handle)
+  t.teardown(async () => {
+    port.close()
+    thread.terminate()
+  })
+
+  thread.suspend()
+  const afterSuspend = await getState(port)
+  t.alike(
+    afterSuspend.calls,
+    ['suspend:swarm', 'suspend:store', 'suspend:extra'],
+    'suspended in insertion order'
+  )
+  thread.resume()
+  const afterResume = await getState(port)
+  t.alike(
+    afterResume.calls,
+    [
+      'suspend:swarm',
+      'suspend:store',
+      'suspend:extra',
+      'resume:extra',
+      'resume:store',
+      'resume:swarm'
+    ],
+    'resumed in reverse order'
+  )
+})
+
+test('suspend budgets 10s of linger', async (t) => {
+  t.plan(1)
+
+  const channel = new Channel()
+  const port = channel.connect()
+  const thread = spawnWorker('./fixtures/thread-worker-timer.js', channel.handle)
   t.teardown(async () => {
     port.close()
     thread.terminate()
@@ -67,11 +103,10 @@ test('suspend budgets 10s of linger', async (t) => {
 
 test('interrupt suspend', async (t) => {
   t.plan(2)
-  const workerPath = path.join(__dirname, 'fixtures', 'thread-worker-interrupt.js')
 
   const channel = new Channel()
   const port = channel.connect()
-  const thread = new globalThis.Bare.Thread(workerPath, { data: channel.handle })
+  const thread = spawnWorker('./fixtures/thread-worker-interrupt.js', channel.handle)
   t.teardown(async () => {
     port.close()
     thread.terminate()
@@ -85,5 +120,5 @@ test('interrupt suspend', async (t) => {
     new Promise((resolve) => setTimeout(() => resolve(false), 2000))
   ])
   t.ok(afterSuspend.suspendCalled, 'suspend was called')
-  t.ok(!state?.enteredIdle, 'suspend didnt enter idle')
+  t.ok(!state?.idleEntered, 'suspend didnt enter idle')
 })

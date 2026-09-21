@@ -1,24 +1,28 @@
+export interface Suspension {
+  suspend(): void | Promise<void>
+  resume(): void | Promise<void>
+}
+
 export interface PearSuspensionOptions {
-  /** Corestore instance; suspended via .close() on suspend. */
-  store?: { close(): Promise<void> }
-  /** Hyperswarm instance; suspended via .destroy() on suspend. */
-  swarm?: { destroy(): Promise<void> }
-  /** Bare-rpc instance; suspended via .close() on suspend. */
-  rpc?: { close(): Promise<void> }
   /** Optional. Return milliseconds left to linger (passed to Suspendify). */
-  pollLinger?(): Promise<number>
-  /** Optional. Called after store/swarm/rpc are suspended. */
-  suspend?(): Promise<void>
-  /** Optional. Called when resuming. */
-  resume?(): Promise<void>
-  /** Optional. Logger; default is (prefix, logs++, ...msg) => console.log(prefix, logs++, ...msg) with prefix from opts.prefix or random. */
-  log?(...msg: unknown[]): void
-  /** Optional. Prefix for default logger (ignored if opts.log is provided). */
-  prefix?: string
+  pollLinger?(): number | Promise<number>
+  /** Optional milliseconds to linger before suspending after wakeup. */
+  wakeupLinger?: number
+  /** Optional. Called after registered suspensions are suspended. */
+  suspend?(): void | Promise<void>
+  /** Optional. Called after registered suspensions are resumed. */
+  resume?(): void | Promise<void>
+  /** Optional. Called when temporarily waking from suspension. */
+  wakeup?(): void | Promise<void>
+  /** Optional. Enable logs. Default false. */
+  verbose?: boolean
 }
 
 declare class PearSuspension {
   constructor(opts?: PearSuspensionOptions)
+
+  /** Register a named suspension. */
+  add(name: string, suspension: Suspension): this
 
   /** Wait up to linger ms then run suspend. */
   suspend(linger?: number): Promise<void>
@@ -31,10 +35,8 @@ declare class PearSuspension {
   readonly suspended: boolean
   readonly resuming: boolean
   readonly resumed: boolean
+  readonly interrupted: boolean
   waitForResumed(): Promise<void>
-
-  /** Whether the app is currently suspended or in the process of suspending. */
-  isBackgrounded(): boolean
 }
 
 export default PearSuspension
