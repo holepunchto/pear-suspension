@@ -1,6 +1,6 @@
 {
   "name": "pear-suspension",
-  "version": "0.1.0",
+  "version": "0.0.3",
   "description": "Handle suspend/resume for Pear apps with p2p modules lifecycle hooks",
   "main": "index.js",
   "exports": {
